@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>සේවාස්ත වවුචර් කළමනාකරණ පද්ධතිය</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --success: #1e8e3e;
+            --success-bg: #e6f4ea;
+            --warning: #b06000;
+            --warning-bg: #fef7e0;
+            --info: #1967d2;
+            --info-bg: #e8f0fe;
+            --purple: #7e22ce;
+            --purple-bg: #f3e8ff;
+            --danger: #c5221f;
+            --danger-bg: #fce8e6;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            color: #ffffff;
+            padding: 18px 28px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        header h1 { margin: 0; font-size: 21px; font-weight: 700; }
+        header p { margin: 4px 0 0; font-size: 12.5px; color: #cbd5e1; }
+
+        .header-actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+
+        button {
+            font-family: inherit;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 15px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary { background-color: #22c55e; color: #ffffff; }
+        .btn-primary:hover { background-color: #16a34a; }
+
+        .btn-scan { background-color: #f59e0b; color: #ffffff; }
+        .btn-scan:hover { background-color: #d97706; }
+
+        .btn-admin { background-color: #38bdf8; color: #0f172a; }
+        .btn-admin:hover { background-color: #7dd3fc; }
+        .btn-admin.unlocked { background-color: #4ade80; color: #064e3b; }
+
+        .btn-secondary {
+            background-color: rgba(255,255,255,0.15);
+            color: #ffffff;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .btn-secondary:hover { background-color: rgba(255,255,255,0.25); }
+
+        .btn-danger-outline {
+            background-color: transparent;
+            color: #fca5a5;
+            border: 1px solid rgba(252,165,165,0.4);
+        }
+        .btn-danger-outline:hover { background-color: rgba(239,68,68,0.2); }
+
+        .admin-only { display: none; }
+        body.is-admin .admin-only { display: inline-flex; }
+
+        .mode-banner {
+            background: #e0f2fe;
+            color: #0369a1;
+            text-align: center;
+            padding: 7px 14px;
+            font-size: 12.5px;
+            font-weight: 600;
+            border-bottom: 1px solid #bae6fd;
+        }
+        body.is-admin .mode-banner {
+            background: #dcfce7;
+            color: #166534;
+            border-bottom-color: #bbf7d0;
+        }
+
+        .container { max-width: 1480px; margin: 22px auto; padding: 0 20px 40px; }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .kpi-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        }
+
+        .kpi-label { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+        .kpi-value { font-size: 23px; font-weight: 700; color: var(--text); }
+        .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+        .panel {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .filters { display: flex; flex-wrap: wrap; gap: 10px; flex: 1; }
+
+        input, select, textarea {
+            font-family: inherit;
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13.5px;
+            background: #fff;
+            color: var(--text);
+        }
+
+        input[type="text"] { min-width: 220px; }
+
+        .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; text-align: left; }
+
+        th {
+            background-color: #f8fafc;
+            color: #334155;
+            font-weight: 700;
+            padding: 12px 12px;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        tr:hover td { background-color: #f8fafc; }
+
+        .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .st-paid { background: var(--success-bg); color: var(--success); }
+        .st-checked { background: var(--warning-bg); color: var(--warning); }
+        .st-approved { background: var(--info-bg); color: var(--info); }
+        .st-photocopy { background: var(--purple-bg); color: var(--purple); }
+        .st-pending { background: var(--danger-bg); color: var(--danger); }
+
+        .book-pill {
+            display: inline-block;
+            margin-top: 5px;
+            background: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #fde047;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+
+        .status-edit-box {
+            margin-top: 7px;
+            padding-top: 7px;
+            border-top: 1px dashed #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-width: 210px;
+        }
+
+        .inline-status-select {
+            padding: 5px 8px;
+            font-size: 12px;
+            border-radius: 6px;
+            width: 100%;
+            background: #f8fafc;
+        }
+
+        .book-input-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        .inline-book-input {
+            min-width: 0;
+            width: 100%;
+            padding: 4px 7px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        .btn-mini-save {
+            padding: 4px 9px;
+            font-size: 11.5px;
+            border-radius: 6px;
+            background: var(--primary);
+            color: #fff;
+            white-space: nowrap;
+        }
+        .btn-mini-save:hover { background: var(--primary-dark); }
+
+        .cheque-tag {
+            display: inline-block;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 3px 7px;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .row-actions { display: flex; gap: 6px; white-space: nowrap; }
+        .qr-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .qr-btn:hover { background: #bae6fd; }
+
+        .action-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .action-btn:hover { background: #fecaca; }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 1000;
+        }
+        .modal-backdrop.open { display: flex; }
+
+        .modal {
+            background: #ffffff;
+            border-radius: 14px;
+            max-width: 820px;
+            width: 100%;
+            max-height: 92vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .modal.small { max-width: 470px; }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+        }
+
+        .modal-header h2 { margin: 0; font-size: 19px; color: #1e3a8a; }
+
+        .close-btn { background: #f1f5f9; color: #334155; padding: 6px 12px; border-radius: 6px; }
+        .close-btn:hover { background: #e2e8f0; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 13px; font-weight: 600; color: #334155; }
+
+        .section-divider {
+            grid-column: 1 / -1;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e3a8a;
+            background: #eff6ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-add-bank {
+            background: #1d4ed8;
+            color: #fff;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+        .btn-add-bank:hover { background: #1e40af; }
+
+        .bank-rows-container {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bank-row {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr 1.2fr auto;
+            gap: 8px;
+            align-items: center;
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .bank-row input { min-width: 0; width: 100%; }
+
+        .btn-remove-bank {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 8px 10px;
+            border-radius: 6px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-save { background: var(--primary); color: #fff; }
+        .btn-save:hover { background: var(--primary-dark); }
+        .btn-cancel { background: #e2e8f0; color: #334155; }
+        .btn-cancel:hover { background: #cbd5e1; }
+
+        .qr-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px dashed #94a3b8;
+        }
+        #qrcodeCanvas { padding: 12px; background: #fff; border-radius: 8px; margin-bottom: 12px; }
+        .qr-details { font-size: 13px; color: #334155; line-height: 1.6; }
+
+        #reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+        .scan-result-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+            text-align: left;
+        }
+        .scan-result-card h4 { margin: 0 0 8px; color: #1e3a8a; }
+        .scan-row { font-size: 13.5px; margin-bottom: 6px; }
+        .quick-status-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 640px) {
+            .bank-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mode-banner" id="modeBanner">
+    👁️ නැරඹීමේ මාදිලිය (Public View Mode) — දත්ත ඇතුළත් කිරීමට හෝ වෙනස් කිරීමට "Admin Login" ක්ලික් කරන්න.
+</div>
+
+<header>
+    <div>
+        <h1>💳 සේවාස්ත වවුචර් කළමනාකරණ පද්ධතිය</h1>
+        <p id="syncStatusText">Voucher Master Tracker — Status, Book No &amp; QR Tracking</p>
+    </div>
+    <div class="header-actions">
+        <button type="button" class="btn-primary admin-only" onclick="openModal()">+ නව වවුචරයක් එක් කරන්න</button>
+        <button type="button" class="btn-scan" onclick="openScannerModal()">📷 QR Scan / තත්වය බලන්න</button>
+        <button type="button" class="btn-admin" id="adminToggleBtn" onclick="toggleAdminAuth()">🔒 Admin Login</button>
+        <button type="button" class="btn-secondary" onclick="exportCSV()">⬇ CSV Download</button>
+        <button type="button" class="btn-danger-outline admin-only" onclick="resetDemoData()">Reset Data</button>
+    </div>
+</header>
+
+<div class="container">
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">මුළු වවුචර් ගණන (Total Vouchers)</div>
+            <div class="kpi-value" id="kpiCount">0</div>
+            <div class="kpi-sub">පද්ධතියේ සටහන් වී ඇති වවුචර්</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">වෙන් කළ මුදල (Allocated Budget)</div>
+            <div class="kpi-value" id="kpiAllocated">රු. 0.00</div>
+            <div class="kpi-sub">වැඩසටහන් සඳහා වෙන් කළ ප්‍රතිපාදන</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">මුළු වියදම (Total Expenditure)</div>
+            <div class="kpi-value" id="kpiSpent">රු. 0.00</div>
+            <div class="kpi-sub">සමස්ත වියදම් එකතුව</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">දළ ශේෂය (Gross Difference)</div>
+            <div class="kpi-value" id="kpiBalance">රු. 0.00</div>
+            <div class="kpi-sub">වෙන් කළ මුදල − මුළු වියදම</div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="toolbar">
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="🔍 වැඩසටහන, පොත් අංකය, වැය විෂය..." oninput="renderApp()">
+                <select id="typeFilter" onchange="renderApp()">
+                    <option value="">සියලුම සේවාස්ත වර්ග</option>
+                    <option value="පළාත් සභා සේවාස්ථ">පළාත් සභා සේවාස්ථ</option>
+                    <option value="සාමාන්‍ය අධ්‍යාපන නවීකරණ (GEMP)">සාමාන්‍ය අධ්‍යාපන නවීකරණ (GEMP)</option>
+                    <option value="මධ්‍යම රජය සේවාස්ථ">මධ්‍යම රජය සේවාස්ථ</option>
+                </select>
+                <select id="statusFilter" onchange="renderApp()">
+                    <option value="">සියලුම තත්වයන් (Status)</option>
+                    <option value="ගෙවීම් අවසන් කර ඇත">ගෙවීම් අවසන් කර ඇත</option>
+                    <option value="පරික්ෂා කිරීම">පරික්ෂා කිරීම</option>
+                    <option value="අනුමත කර ඇත">අනුමත කර ඇත</option>
+                    <option value="ඡායා පිටපත් කිරීමට යොමු කර ඇත">ඡායා පිටපත් කිරීමට යොමු කර ඇත</option>
+                    <option value="ගෙවීමට ඇත">ගෙවීමට ඇත</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>අනු අංකය</th>
+                        <th>සේවාස්ත වර්ගය</th>
+                        <th>දිනය</th>
+                        <th>වැඩසටහනේ නම</th>
+                        <th>වැය විෂය (Vote Code)</th>
+                        <th>විෂය</th>
+                        <th>බැංකු සහ චෙක්පත් විස්තර</th>
+                        <th class="num">වෙන් කළ මුදල</th>
+                        <th class="num">මුළු වියදම</th>
+                        <th>තත්වය / පොතේ අංකය</th>
+                        <th>QR / ක්‍රියා</th>
+                    </tr>
+                </thead>
+                <tbody id="voucherTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Voucher Modal -->
+<div class="modal-backdrop" id="voucherModal" onclick="backdropClose(event, closeModal)">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>නව වවුචරයක් ඇතුළත් කරන්න</h2>
+            <button type="button" class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <form id="voucherForm" onsubmit="saveVoucher(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>අනු අංකය (Serial No) *</label>
+                    <input type="text" id="serialNo" required>
+                </div>
+                <div class="form-group">
+                    <label>සේවාස්ත වර්ගය *</label>
+                    <select id="sewasthaType" required>
+                        <option value="පළාත් සභා සේවාස්ථ">පළාත් සභා සේවාස්ථ</option>
+                        <option value="සාමාන්‍ය අධ්‍යාපන නවීකරණ (GEMP)">සාමාන්‍ය අධ්‍යාපන නවීකරණ (GEMP)</option>
+                        <option value="මධ්‍යම රජය සේවාස්ථ">මධ්‍යම රජය සේවාස්ථ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>වැඩසටහන පැවැත්වූ දිනය *</label>
+                    <input type="date" id="date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>වැය විෂය (Vote Code) *</label>
+                    <select id="voteCode" required onchange="toggleCustomField('voteCode', 'customVoteCode')">
+                        <option value="">-- වැය විෂය තෝරන්න --</option>
+                        <option value="612-81-05-01-1409-22(x)">612-81-05-01-1409-22(x)</option>
+                        <option value="612-81-05-2401-25 (i)">612-81-05-2401-25 (i) (GEMP)</option>
+                        <option value="612-81-05-01-1409-22(xlv)">612-81-05-01-1409-22(xlv)</option>
+                        <option value="612-87-07-01-1409-22(xlvii)">612-87-07-01-1409-22(xlvii)</option>
+                        <option value="612-80-04-01-1409-22(x)">612-80-04-01-1409-22(x)</option>
+                        <option value="612-80-04-01-1409-22(xl)">612-80-04-01-1409-22(xl)</option>
+                        <option value="612-81-05-01-1409-22(xiii)">612-81-05-01-1409-22(xiii)</option>
+                        <option value="612-81-05-01-1409-22(i)">612-81-05-01-1409-22(i)</option>
+                        <option value="612-87-06-1409-22(viii)">612-87-06-1409-22(viii)</option>
+                        <option value="612-81-05-01-1409-22(viii)">612-81-05-01-1409-22(viii)</option>
+                        <option value="612-80-4-2202(i)-33">612-80-4-2202(i)-33</option>
+                        <option value="__CUSTOM__">✍️ වෙනත් වැය විෂයක් ටයිප් කරන්න...</option>
+                    </select>
+                    <input type="text" id="customVoteCode" placeholder="වැය විෂය මෙහි ලියන්න..." style="display:none; margin-top:6px;">
+                </div>
+
+                <div class="form-group">
+                    <label>විෂය (Subject) *</label>
+                    <select id="subject" required onchange="toggleCustomField('subject', 'customSubject')">
+                        <option value="">-- විෂය තෝරන්න --</option>
+                        <option value="ප්‍රාථමික">ප්‍රාථමික</option>
+                        <option value="පාසල් නගා සිටුවීමේ වැඩටහන">පාසල් නගා සිටුවීමේ වැඩටහන</option>
+                        <option value="ඉංග්‍රීසි">ඉංග්‍රීසි</option>
+                        <option value="සිසු සාධන මට්ටම් ඉහල නැංවීම">සිසු සාධන මට්ටම් ඉහල නැංවීම</option>
+                        <option value="පාසල් පාදක වෘත්තීය සංවර්ධනය">පාසල් පාදක වෘත්තීය සංවර්ධනය</option>
+                        <option value="තාක්ෂණ">තාක්ෂණ</option>
+                        <option value="කෘෂිකර්ම">කෘෂිකර්ම</option>
+                        <option value="විශේෂ අධ්‍යාපනය/ප්‍රාථමික">විශේෂ අධ්‍යාපනය/ප්‍රාථමික</option>
+                        <option value="පුස්තකාල">පුස්තකාල</option>
+                        <option value="පළාත්, ජාතික හා ජාත්‍යන්තර තරඟ">පළාත්, ජාතික හා ජාත්‍යන්තර තරඟ</option>
+                        <option value="නොවිධිමත් අධ්‍යාපනය">නොවිධිමත් අධ්‍යාපනය</option>
+                        <option value="සෞඛ්‍ය හා පෝෂණය">සෞඛ්‍ය හා පෝෂණය</option>
+                        <option value="ශිෂ්‍ය වැඩසටහන් (ද්විතීයික)">ශිෂ්‍ය වැඩසටහන් (ද්විතීයික)</option>
+                        <option value="ගුරු වැඩසටහන් (ද්විතීයික)">ගුරු වැඩසටහන් (ද්විතීයික)</option>
+                        <option value="ක්‍රීඩා">ක්‍රීඩා</option>
+                        <option value="මානව සම්පත් සංවර්ධනය">මානව සම්පත් සංවර්ධනය</option>
+                        <option value="විශේෂ අධ්‍යාපනය">විශේෂ අධ්‍යාපනය</option>
+                        <option value="13 වසරක අධ්‍යාපනය">13 වසරක අධ්‍යාපනය</option>
+                        <option value="අනෙකුත් වැඩසටහන්">අනෙකුත් වැඩසටහන්</option>
+                        <option value="__CUSTOM__">✍️ අලුත් විෂයක් ටයිප් කරන්න...</option>
+                    </select>
+                    <input type="text" id="customSubject" placeholder="අලුත් විෂය නම මෙහි ටයිප් කරන්න..." style="display:none; margin-top:6px;">
+                </div>
+
+                <div class="form-group">
+                    <label>සම්බන්ධීකරණ නිළධාරියා</label>
+                    <input type="text" id="coordinator" placeholder="නිළධාරියාගේ නම">
+                </div>
+
+                <div class="form-group full">
+                    <label>වැඩසටහනේ නම *</label>
+                    <textarea id="programName" rows="2" required></textarea>
+                </div>
+
+                <div class="section-divider">
+                    <span>🏦 බැංකු සහ චෙක්පත් විස්තර (බැංකු කිහිපයක් එක් කළ හැක)</span>
+                    <button type="button" class="btn-add-bank" onclick="addBankRow()">+ තවත් බැංකුවක් / චෙක් එකක්</button>
+                </div>
+
+                <div class="bank-rows-container" id="bankRowsContainer"></div>
+
+                <div class="section-divider">
+                    <span>💰 මූල්‍ය ප්‍රතිපාදන හා වියදම්</span>
+                </div>
+
+                <div class="form-group">
+                    <label>වැඩසටහන සඳහා වෙන් කළ ප්‍රතිපාදන (රු.) *</label>
+                    <input type="number" step="0.01" id="allocatedBudget" required>
+                </div>
+                <div class="form-group">
+                    <label>මුළු වියදම (රු.) *</label>
+                    <input type="number" step="0.01" id="totalCost" required>
+                </div>
+                <div class="form-group">
+                    <label>ආහාර වියදම (රු.)</label>
+                    <input type="number" step="0.01" id="food" value="0">
+                </div>
+                <div class="form-group">
+                    <label>ලිපි ද්‍රව්‍ය වියදම (රු.)</label>
+                    <input type="number" step="0.01" id="stationery" value="0">
+                </div>
+
+                <div class="form-group full">
+                    <label>තත්වය (Status) *</label>
+                    <select id="status" required>
+                        <option value="පරික්ෂා කිරීම">පරික්ෂා කිරීම</option>
+                        <option value="අනුමත කර ඇත">අනුමත කර ඇත</option>
+                        <option value="ඡායා පිටපත් කිරීමට යොමු කර ඇත">ඡායා පිටපත් කිරීමට යොමු කර ඇත</option>
+                        <option value="ගෙවීමට ඇත">ගෙවීමට ඇත</option>
+                        <option value="ගෙවීම් අවසන් කර ඇත">ගෙවීම් අවසන් කර ඇත</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal()">අවලංගු කරන්න</button>
+                <button type="submit" class="btn-save">සුරකින්න (Save)</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- QR View Modal -->
+<div class="modal-backdrop" id="qrViewModal" onclick="backdropClose(event, closeQrViewModal)">
+    <div class="modal small">
+        <div class="modal-header">
+            <h2>වවුචර් QR කේතය</h2>
+            <button type="button" class="close-btn" onclick="closeQrViewModal()">✕</button>
+        </div>
+        <div class="qr-box">
+            <div id="qrcodeCanvas"></div>
+            <div class="qr-details" id="qrDetailsText"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" onclick="closeQrViewModal()">වසන්න</button>
+            <button type="button" class="btn-save" onclick="downloadQrImage()">⬇ QR Image Download</button>
+        </div>
+    </div>
+</div>
+
+<!-- QR Scanner & Status Check Modal -->
+<div class="modal-backdrop" id="scannerModal" onclick="backdropClose(event, closeScannerModal)">
+    <div class="modal small">
+        <div class="modal-header">
+            <h2>📷 QR Scan / වවුචර් තත්වය පරීක්ෂාව</h2>
+            <button type="button" class="close-btn" onclick="closeScannerModal()">✕</button>
+        </div>
+
+        <div id="reader"></div>
+
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <input type="text" id="manualVoucherSearch" placeholder="වවුචර් අංකය ටයිප් කරන්න (උදා: 1)" style="flex:1; min-width:0;">
+            <button type="button" class="btn-save" onclick="lookupVoucherBySerial(document.getElementById('manualVoucherSearch').value)">සොයන්න</button>
+        </div>
+
+        <div id="scanResultArea"></div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" onclick="closeScannerModal()">වසන්න</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ADMIN_PIN = "2026";
+    const FIREBASE_DB_URL = "";
+    const STORAGE_KEY = "sewastha_vouchers_v5";
+
+    const STATUS_OPTIONS = [
+        "පරික්ෂා කිරීම",
+        "අනුමත කර ඇත",
+        "ඡායා පිටපත් කිරීමට යොමු කර ඇත",
+        "ගෙවීමට ඇත",
+        "ගෙවීම් අවසන් කර ඇත"
+    ];
+
+    let vouchersCache = [];
+    let isAdmin = false;
+    let html5QrScanner = null;
+    let isScannerRunning = false;
+
+    const DEFAULT_VOUCHERS = [
+        { serialNo: "1", bookNo: "පොත-1 / 01", sewasthaType: "පළාත් සභා සේවාස්ථ", date: "2026-09-09", programName: "2027 1 ශ්‍රේණිය නව අධ්‍යාපන ප්‍රතිසංස්කරණ පිළිබඳ ගුරු පුහුණුව", voteCode: "612-81-05-01-1409-22(x)", subject: "ප්‍රාථමික", coordinator: "ජේ. ඒ. ඩී. පී. ජයතිලක", cheques: [{ bank: "ලංකා බැංකුව (BOC)", chequeNo: "65215", amount: 0 }], food: 66960, stationery: 0, allocatedBudget: 1098850, totalCost: 177861, status: "ගෙවීම් අවසන් කර ඇත" },
+        { serialNo: "2", bookNo: "පොත-1 / 02", sewasthaType: "සාමාන්‍ය අධ්‍යාපන නවීකරණ (GEMP)", date: "2026-10-07", programName: "අධ්‍යාපන ආකෘතියක් සකස් කිරීම හා අධ්‍යාපන සැලසුම් පිළිබඳව විදුහල්පතිවරු නියෝජ්‍ය විදුහල්පතිවරු දැනුවත් කිරීමේ වැඩසටහන", voteCode: "612-81-05-2401-25 (i)", subject: "පාසල් නගා සිටුවීමේ වැඩටහන", coordinator: "ඩී. එම්. එස්. දිසානායක", cheques: [{ bank: "ලංකා බැංකුව (BOC)", chequeNo: "-", amount: 36600 }, { bank: "මහජන බැංකුව (People's Bank)", chequeNo: "-", amount: 25800 }], food: 43560, stationery: 0, allocatedBudget: 227010, totalCost: 212510, status: "ගෙවීම් අවසන් කර ඇත" },
+        { serialNo: "3", bookNo: "පොත-1 / 03", sewasthaType: "සාමාන්‍ය අධ්‍යාපන නවීකරණ (GEMP)", date: "2026-10-15", programName: "ඉංග්‍රීසි භාෂා ඉගැන්වීම් පිළිබඳ ක්‍රමවේද පුහුණු වැඩසටහන", voteCode: "612-81-05-2401-25 (i)", subject: "ඉංග්‍රීසි", coordinator: "අයි. ධර්මසේන", cheques: [{ bank: "මහජන බැංකුව (People's Bank)", chequeNo: "-", amount: 6900 }, { bank: "ජාතික ඉතිරිකිරීමේ බැංකුව (NSB)", chequeNo: "-", amount: 5400 }], food: 74260, stationery: 0, allocatedBudget: 98470, totalCost: 88860, status: "ගෙවීම් අවසන් කර ඇත" },
+        { serialNo: "14", bookNo: "", sewasthaType: "පළාත් සභා සේවාස්ථ", date: "2026-11-20", programName: "පරීක්ෂා කිරීමේ වවුචරය", voteCode: "612-81-05-01-1409-22(x)", subject: "ප්‍රාථමික", coordinator: "-", cheques: [], food: 0, stationery: 0, allocatedBudget: 0, totalCost: 0, status: "ඡායා පිටපත් කිරීමට යොමු කර ඇත" }
+    ];
+
+    function toggleAdminAuth() {
+        if (isAdmin) {
+            isAdmin = false;
+            sessionStorage.removeItem("sewastha_admin");
+            updateAdminUI();
+            return;
+        }
+        const pin = prompt("Admin PIN අංකය ඇතුළත් කරන්න:");
+        if (pin === null) return;
+        if (pin === ADMIN_PIN) {
+            isAdmin = true;
+            sessionStorage.setItem("sewastha_admin", "1");
+            updateAdminUI();
+        } else {
+            alert("❌ වැරදි PIN අංකයකි!");
+        }
+    }
+
+    function updateAdminUI() {
+        const btn = document.getElementById("adminToggleBtn");
+        const banner = document.getElementById("modeBanner");
+        if (isAdmin) {
+            document.body.classList.add("is-admin");
+            btn.textContent = "🔓 Admin Logout";
+            btn.classList.add("unlocked");
+            banner.textContent = "🔓 Admin මාදිලිය සක්‍රීයයි — වගුවේ තත්වය (Status) සහ පොතේ අංකය කෙලින්ම යාවත්කාලීන කළ හැක.";
+        } else {
+            document.body.classList.remove("is-admin");
+            btn.textContent = "🔒 Admin Login";
+            btn.classList.remove("unlocked");
+            banner.textContent = "👁️ නැරඹීමේ මාදිලිය (Public View Mode) — දත්ත ඇතුළත් කිරීමට හෝ වෙනස් කිරීමට \"Admin Login\" ක්ලික් කරන්න.";
+        }
+        renderApp();
+    }
+
+    function backdropClose(event, closeFn) {
+        if (event.target.classList.contains("modal-backdrop")) closeFn();
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeQrViewModal();
+            closeScannerModal();
+            closeModal();
+        }
+    });
+
+    function toggleCustomField(selectId, inputId) {
+        const sel = document.getElementById(selectId);
+        const customInput = document.getElementById(inputId);
+        if (sel.value === "__CUSTOM__") {
+            customInput.style.display = "block";
+            customInput.required = true;
+            customInput.focus();
+        } else {
+            customInput.style.display = "none";
+            customInput.required = false;
+            customInput.value = "";
+        }
+    }
+
+    function addBankRow(bank = "", chequeNo = "", amount = "") {
+        const container = document.getElementById("bankRowsContainer");
+        const row = document.createElement("div");
+        row.className = "bank-row";
+        row.innerHTML = `
+            <select class="b-name">
+                <option value="">-- බැංකුව තෝරන්න --</option>
+                <option value="ලංකා බැංකුව (BOC)" ${bank === "ලංකා බැංකුව (BOC)" ? "selected" : ""}>ලංකා බැංකුව (BOC)</option>
+                <option value="මහජන බැංකුව (People's Bank)" ${bank === "මහජන බැංකුව (People's Bank)" ? "selected" : ""}>මහජන බැංකුව (People's Bank)</option>
+                <option value="ප්‍රාදේශීය සංවර්ධන බැංකුව (RDB)" ${bank === "ප්‍රාදේශීය සංවර්ධන බැංකුව (RDB)" ? "selected" : ""}>ප්‍රාදේශීය සංවර්ධන බැංකුව (RDB)</option>
+                <option value="ජාතික ඉතිරිකිරීමේ බැංකුව (NSB)" ${bank === "ජාතික ඉතිරිකිරීමේ බැංකුව (NSB)" ? "selected" : ""}>ජාතික ඉතිරිකිරීමේ බැංකුව (NSB)</option>
+            </select>
+            <input type="text" class="b-cheque" placeholder="චෙක් අංකය" value="${escapeHtml(chequeNo)}">
+            <input type="number" step="0.01" class="b-amount" placeholder="මුදල (රු.)" value="${amount}">
+            <button type="button" class="btn-remove-bank" title="ඉවත් කරන්න" onclick="this.parentElement.remove()">✕</button>
+        `;
+        container.appendChild(row);
+    }
+
+    async function initData() {
+        if (sessionStorage.getItem("sewastha_admin") === "1") isAdmin = true;
+        updateAdminUI();
+
+        const cleanUrl = FIREBASE_DB_URL.trim().replace(/\/+$/, "");
+        if (cleanUrl) {
+            try {
+                const res = await fetch(`${cleanUrl}/vouchers.json`);
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    vouchersCache = data.filter(Boolean);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(vouchersCache));
+                } else {
+                    vouchersCache = loadLocalVouchers();
+                    await syncToCloud(vouchersCache);
+                }
+            } catch {
+                vouchersCache = loadLocalVouchers();
+            }
+        } else {
+            vouchersCache = loadLocalVouchers();
+        }
+        renderApp();
+    }
+
+    function loadLocalVouchers() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_VOUCHERS));
+            return [...DEFAULT_VOUCHERS];
+        }
+        try { return JSON.parse(raw); } catch { return [...DEFAULT_VOUCHERS]; }
+    }
+
+    async function saveVouchers(list) {
+        vouchersCache = list;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        await syncToCloud(list);
+    }
+
+    async function syncToCloud(list) {
+        const cleanUrl = FIREBASE_DB_URL.trim().replace(/\/+$/, "");
+        if (!cleanUrl) return;
+        try {
+            await fetch(`${cleanUrl}/vouchers.json`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(list)
+            });
+        } catch {
+            alert("⚠️ Cloud වෙත දත්ත යැවීමේදී දෝෂයක් ඇති විය.");
+        }
+    }
+
+    async function saveStatusAndBook(serialNo) {
+        if (!isAdmin) return;
+        const statusEl = document.getElementById(`st_sel_${serialNo}`);
+        const bookEl = document.getElementById(`bk_inp_${serialNo}`);
+        const newStatus = statusEl ? statusEl.value : "";
+        const newBookNo = bookEl ? bookEl.value.trim() : "";
+
+        const updated = vouchersCache.map(v =>
+            v.serialNo === serialNo
+                ? { ...v, status: newStatus || v.status, bookNo: newBookNo }
+                : v
+        );
+        await saveVouchers(updated);
+        renderApp();
+    }
+
+    function formatRs(val) {
+        return "රු. " + Number(val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function statusBadge(status) {
+        let cls = "st-pending";
+        if (status.includes("ගෙවීම් අවසන්")) cls = "st-paid";
+        else if (status.includes("පරික්ෂා")) cls = "st-checked";
+        else if (status.includes("අනුමත")) cls = "st-approved";
+        else if (status.includes("ඡායා පිටපත්")) cls = "st-photocopy";
+        return `<span class="badge ${cls}">${escapeHtml(status)}</span>`;
+    }
+
+    function escapeHtml(str) {
+        return String(str || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function renderChequesCell(cheques) {
+        if (!Array.isArray(cheques) || cheques.length === 0) return "-";
+        return cheques.map(c => {
+            const amt = Number(c.amount || 0) > 0 ? ` — ${formatRs(c.amount)}` : "";
+            const chq = c.chequeNo && c.chequeNo !== "-" ? ` (චෙක්: ${escapeHtml(c.chequeNo)})` : "";
+            return `<div class="cheque-tag"><strong>${escapeHtml(c.bank)}</strong>${chq}${amt}</div>`;
+        }).join("<br>");
+    }
+
+    function renderApp() {
+        const q = document.getElementById("searchInput").value.trim().toLowerCase();
+        const typeF = document.getElementById("typeFilter").value;
+        const statusF = document.getElementById("statusFilter").value;
+
+        const filtered = vouchersCache.filter(v => {
+            const matchType = !typeF || v.sewasthaType === typeF;
+            const matchStatus = !statusF || v.status === statusF;
+            const chequeText = Array.isArray(v.cheques) ? v.cheques.map(c => `${c.bank} ${c.chequeNo}`).join(" ") : "";
+            const hay = `${v.serialNo} ${v.bookNo || ""} ${v.programName} ${v.voteCode} ${v.subject} ${v.coordinator} ${chequeText}`.toLowerCase();
+            const matchQ = !q || hay.includes(q);
+            return matchType && matchStatus && matchQ;
+        });
+
+        const totalAlloc = filtered.reduce((s, v) => s + Number(v.allocatedBudget || 0), 0);
+        const totalSpent = filtered.reduce((s, v) => s + Number(v.totalCost || 0), 0);
+        const diff = totalAlloc - totalSpent;
+
+        document.getElementById("kpiCount").textContent = filtered.length;
+        document.getElementById("kpiAllocated").textContent = formatRs(totalAlloc);
+        document.getElementById("kpiSpent").textContent = formatRs(totalSpent);
+        document.getElementById("kpiBalance").textContent = formatRs(diff);
+
+        const tbody = document.getElementById("voucherTableBody");
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:24px; color:#64748b;">ගැලපෙන වවුචර් වාර්තා හමු නොවීය.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(v => {
+            const bookBadge = v.bookNo
+                ? `<div><span class="book-pill">📖 පොතේ අංකය: ${escapeHtml(v.bookNo)}</span></div>`
+                : "";
+
+            const adminStatusControls = isAdmin
+                ? `<div class="status-edit-box">
+                    <select id="st_sel_${escapeHtml(v.serialNo)}" class="inline-status-select" onchange="saveStatusAndBook('${escapeHtml(v.serialNo)}')">
+                        ${STATUS_OPTIONS.map(opt => `<option value="${opt}" ${v.status === opt ? "selected" : ""}>${opt}</option>`).join("")}
+                    </select>
+                    <div class="book-input-row">
+                        <input type="text" id="bk_inp_${escapeHtml(v.serialNo)}" class="inline-book-input" placeholder="පොතේ අංකය..." value="${escapeHtml(v.bookNo || "")}">
+                        <button type="button" class="btn-mini-save" onclick="saveStatusAndBook('${escapeHtml(v.serialNo)}')">Save</button>
+                    </div>
+                   </div>`
+                : "";
+
+            return `
+            <tr>
+                <td><strong>${escapeHtml(v.serialNo)}</strong></td>
+                <td>${escapeHtml(v.sewasthaType)}</td>
+                <td style="white-space:nowrap;">${escapeHtml(v.date)}</td>
+                <td>${escapeHtml(v.programName)}</td>
+                <td style="white-space:nowrap; font-family:monospace;">${escapeHtml(v.voteCode || "-")}</td>
+                <td>${escapeHtml(v.subject)}</td>
+                <td>${renderChequesCell(v.cheques)}</td>
+                <td class="num">${formatRs(v.allocatedBudget)}</td>
+                <td class="num"><strong>${formatRs(v.totalCost)}</strong></td>
+                <td>
+                    ${statusBadge(v.status)}
+                    ${bookBadge}
+                    ${adminStatusControls}
+                </td>
+                <td>
+                    <div class="row-actions">
+                        <button type="button" class="qr-btn" onclick="showVoucherQR('${escapeHtml(v.serialNo)}')">QR</button>
+                        ${isAdmin ? `<button type="button" class="action-btn" onclick="deleteVoucher('${escapeHtml(v.serialNo)}')">මකන්න</button>` : ""}
+                    </div>
+                </td>
+            </tr>
+        `}).join("");
+    }
+
+    function openModal() {
+        if (!isAdmin) return;
+        document.getElementById("voucherForm").reset();
+        document.getElementById("customSubject").style.display = "none";
+        document.getElementById("customSubject").required = false;
+        document.getElementById("customVoteCode").style.display = "none";
+        document.getElementById("customVoteCode").required = false;
+
+        document.getElementById("bankRowsContainer").innerHTML = "";
+        addBankRow();
+
+        document.getElementById("serialNo").value = String(vouchersCache.length + 1);
+        document.getElementById("date").valueAsDate = new Date();
+        document.getElementById("voucherModal").classList.add("open");
+    }
+
+    function closeModal() {
+        document.getElementById("voucherModal").classList.remove("open");
+    }
+
+    async function saveVoucher(e) {
+        e.preventDefault();
+        if (!isAdmin) return;
+
+        const subjectSel = document.getElementById("subject").value;
+        const finalSubject = subjectSel === "__CUSTOM__" ? document.getElementById("customSubject").value.trim() : subjectSel;
+
+        const voteSel = document.getElementById("voteCode").value;
+        const finalVote = voteSel === "__CUSTOM__" ? document.getElementById("customVoteCode").value.trim() : voteSel;
+
+        const cheques = [];
+        document.querySelectorAll("#bankRowsContainer .bank-row").forEach(row => {
+            const bank = row.querySelector(".b-name").value;
+            const chequeNo = row.querySelector(".b-cheque").value.trim();
+            const amount = Number(row.querySelector(".b-amount").value || 0);
+            if (bank || chequeNo || amount > 0) {
+                cheques.push({ bank: bank || "වෙනත් බැංකුවක්", chequeNo: chequeNo || "-", amount });
+            }
+        });
+
+        const entry = {
+            serialNo: document.getElementById("serialNo").value.trim(),
+            bookNo: "",
+            sewasthaType: document.getElementById("sewasthaType").value,
+            date: document.getElementById("date").value,
+            programName: document.getElementById("programName").value.trim(),
+            voteCode: finalVote,
+            subject: finalSubject,
+            coordinator: document.getElementById("coordinator").value.trim() || "-",
+            cheques,
+            food: Number(document.getElementById("food").value || 0),
+            stationery: Number(document.getElementById("stationery").value || 0),
+            allocatedBudget: Number(document.getElementById("allocatedBudget").value || 0),
+            totalCost: Number(document.getElementById("totalCost").value || 0),
+            status: document.getElementById("status").value
+        };
+
+        await saveVouchers([...vouchersCache, entry]);
+        closeModal();
+        renderApp();
+    }
+
+    async function deleteVoucher(serialNo) {
+        if (!isAdmin) return;
+        if (!confirm(`අනු අංක ${serialNo} දරන වවුචරය මකා දැමීමට අවශ්‍යද?`)) return;
+        await saveVouchers(vouchersCache.filter(v => v.serialNo !== serialNo));
+        renderApp();
+    }
+
+    function showVoucherQR(serialNo) {
+        const v = vouchersCache.find(item => item.serialNo === serialNo);
+        if (!v) return;
+
+        const qrContainer = document.getElementById("qrcodeCanvas");
+        qrContainer.innerHTML = "";
+
+        const payload = `SEWASTHA_VOUCHER:${v.serialNo}|${v.bookNo || "-"}|${v.voteCode}|${v.totalCost}|${v.status}`;
+        new QRCode(qrContainer, {
+            text: payload,
+            width: 190,
+            height: 190,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+
+        document.getElementById("qrDetailsText").innerHTML = `
+            <strong>වවුචර් අංකය: #${escapeHtml(v.serialNo)}</strong> ${v.bookNo ? `| පොත: <strong>${escapeHtml(v.bookNo)}</strong>` : ""}<br>
+            ${escapeHtml(v.programName)}<br>
+            වැය විෂය: <code>${escapeHtml(v.voteCode)}</code> | මුදල: <strong>${formatRs(v.totalCost)}</strong><br>
+            තත්වය: ${statusBadge(v.status)}
+        `;
+
+        document.getElementById("qrViewModal").classList.add("open");
+    }
+
+    function closeQrViewModal() {
+        document.getElementById("qrViewModal").classList.remove("open");
+    }
+
+    function downloadQrImage() {
+        const img = document.querySelector("#qrcodeCanvas img") || document.querySelector("#qrcodeCanvas canvas");
+        if (!img) return;
+        const url = img.tagName === "IMG" ? img.src : img.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "voucher_qr.png";
+        a.click();
+    }
+
+    async function stopScannerSafely() {
+        const scanner = html5QrScanner;
+        html5QrScanner = null;
+        const running = isScannerRunning;
+        isScannerRunning = false;
+
+        if (scanner && running) {
+            try { await scanner.stop(); } catch (_) {}
+            try { await scanner.clear(); } catch (_) {}
+        }
+        const readerEl = document.getElementById("reader");
+        if (readerEl) readerEl.innerHTML = "";
+    }
+
+    function openScannerModal() {
+        document.getElementById("scanResultArea").innerHTML = "";
+        document.getElementById("manualVoucherSearch").value = "";
+        document.getElementById("scannerModal").classList.add("open");
+
+        if (typeof Html5Qrcode !== "undefined") {
+            const scanner = new Html5Qrcode("reader");
+            html5QrScanner = scanner;
+            scanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 220, height: 220 } },
+                (decodedText) => {
+                    let serial = decodedText.trim();
+                    if (serial.startsWith("SEWASTHA_VOUCHER:")) {
+                        serial = serial.replace("SEWASTHA_VOUCHER:", "").split("|")[0];
+                    }
+                    lookupVoucherBySerial(serial);
+                },
+                () => {}
+            ).then(() => {
+                isScannerRunning = true;
+            }).catch(() => {
+                isScannerRunning = false;
+            });
+        }
+    }
+
+    function closeScannerModal() {
+        document.getElementById("scannerModal").classList.remove("open");
+        stopScannerSafely();
+    }
+
+    function lookupVoucherBySerial(serial) {
+        const clean = String(serial || "").trim();
+        const area = document.getElementById("scanResultArea");
+        if (!clean) return;
+
+        const v = vouchersCache.find(item => item.serialNo === clean);
+        if (!v) {
+            area.innerHTML = `<div class="scan-result-card" style="border-color:#fca5a5; background:#fef2f2;">❌ අංක <strong>${escapeHtml(clean)}</strong> දරන වවුචරය හමු නොවීය.</div>`;
+            return;
+        }
+
+        const adminUpdateBar = isAdmin ? `
+            <div class="quick-status-bar">
+                <select id="quickStatusSelect" style="width:100%; font-size:13px; padding:7px 9px;">
+                    ${STATUS_OPTIONS.map(opt => `<option value="${opt}" ${v.status === opt ? "selected" : ""}>${opt}</option>`).join("")}
+                </select>
+                <div style="display:flex; gap:6px;">
+                    <input type="text" id="quickBookInput" placeholder="පොතේ අංකය ඇතුළත් කරන්න..." value="${escapeHtml(v.bookNo || "")}" style="flex:1; min-width:0; font-size:13px; padding:7px 9px;">
+                    <button type="button" class="btn-save" style="padding:7px 14px; font-size:13px;" onclick="updateStatusFromScan('${escapeHtml(v.serialNo)}')">Save</button>
+                </div>
+            </div>` : "";
+
+        area.innerHTML = `
+            <div class="scan-result-card">
+                <h4>✅ වවුචර් අංක #${escapeHtml(v.serialNo)}</h4>
+                <div class="scan-row"><strong>වැඩසටහන:</strong> ${escapeHtml(v.programName)}</div>
+                <div class="scan-row"><strong>වැය විෂය:</strong> ${escapeHtml(v.voteCode)} | <strong>විෂය:</strong> ${escapeHtml(v.subject)}</div>
+                <div class="scan-row"><strong>බැංකු / චෙක්:</strong><br>${renderChequesCell(v.cheques)}</div>
+                <div class="scan-row"><strong>මුළු වියදම:</strong> ${formatRs(v.totalCost)}</div>
+                <div class="scan-row"><strong>වත්මන් තත්වය:</strong> ${statusBadge(v.status)} ${v.bookNo ? `<span class="book-pill">📖 පොත: ${escapeHtml(v.bookNo)}</span>` : ""}</div>
+                ${adminUpdateBar}
+            </div>
+        `;
+    }
+
+    async function updateStatusFromScan(serialNo) {
+        if (!isAdmin) return;
+        const newStatus = document.getElementById("quickStatusSelect").value;
+        const newBookNo = document.getElementById("quickBookInput").value.trim();
+        const updated = vouchersCache.map(item =>
+            item.serialNo === serialNo ? { ...item, status: newStatus, bookNo: newBookNo } : item
+        );
+        await saveVouchers(updated);
+        renderApp();
+        lookupVoucherBySerial(serialNo);
+    }
+
+    function exportCSV() {
+        const headers = ["Serial No", "Sewastha Type", "Date", "Program Name", "Vote Code", "Subject", "Coordinator", "Bank & Cheques", "Food", "Stationery", "Allocated Budget", "Total Cost", "Status", "Book No"];
+        const lines = [headers.join(",")];
+
+        vouchersCache.forEach(v => {
+            const chequeSummary = Array.isArray(v.cheques)
+                ? v.cheques.map(c => `${c.bank} [${c.chequeNo}]: ${c.amount}`).join(" | ")
+                : "";
+            const row = [
+                v.serialNo, v.sewasthaType, v.date, v.programName, v.voteCode, v.subject,
+                v.coordinator, chequeSummary, v.food, v.stationery,
+                v.allocatedBudget, v.totalCost, v.status, v.bookNo || ""
+            ].map(cell => `"${String(cell ?? "").replace(/"/g, '""')}"`);
+            lines.push(row.join(","));
+        });
+
+        const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "sewastha_vouchers.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    async function resetDemoData() {
+        if (!isAdmin) return;
+        if (!confirm("මුල් දත්ත නැවත පූරණය කර ඔබ ඇතුළත් කළ වෙනස්කම් Reset කරන්නද?")) return;
+        await saveVouchers([...DEFAULT_VOUCHERS]);
+        renderApp();
+    }
+
+    initData();
+</script>
+
+</body>
+</html>
